@@ -1,0 +1,751 @@
+<h1 id="modern-portfolio-theory"><strong>Modern Portfolio
+Theory</strong></h1>
+<p><strong><em>For report in pdf</em></strong> <a
+href="MPT.pdf">pdf_link</a></p>
+<p><strong><em>For notebook</em></strong> <a
+href="ModernPortfolioTheory.ipynb">notebook</a></p>
+<h2 id="introduction"><strong>Introduction</strong></h2>
+<p><em>The aim of this project is to perform an in-depth analysis
+assosiated with the assumptions of <code>Modern Portfolio Theory</code>
+and how financial assets interact within the portfolio using sttistical
+methods</em></p>
+<p><em><code>Harry Markowitz</code> introduced the mean-varinace
+portfolio selection theory in 1952.Since then the Modern Porfolio theory
+is cornerstone in the field of modern finance</em></p>
+<pre class="python"><code>import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import requests
+sns.reset_defaults()</code></pre>
+<h2 id="data"><strong>Data</strong></h2>
+<p><em>Twelve stock quoted on NYSE are used for the purpose of analysis.
+The data is between the period of 1st January 2008 to 31st December
+2017. The data is downloaded using <code>Twelvedata API</code> in the
+<code>json</code> format. The stocks are divident adjusted</em></p>
+<table>
+<thead>
+<tr>
+<th>Company</th>
+<th>Symbol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Apple Inc</td>
+<td>AAPL</td>
+</tr>
+<tr>
+<td>American Express Co</td>
+<td>AXP</td>
+</tr>
+<tr>
+<td>Boeing Co</td>
+<td>BA</td>
+</tr>
+<tr>
+<td>General Electric</td>
+<td>GE</td>
+</tr>
+<tr>
+<td>Johnson &amp; Johnson</td>
+<td>JNJ</td>
+</tr>
+<tr>
+<td>JPMorgan Chase &amp; Co</td>
+<td>JPM</td>
+</tr>
+<tr>
+<td>Coca-Cola Co</td>
+<td>KO</td>
+</tr>
+<tr>
+<td>McDonald’s Corp</td>
+<td>MCD</td>
+</tr>
+<tr>
+<td>Microsoft Corp</td>
+<td>MSFT</td>
+</tr>
+<tr>
+<td>Verizon Communications Inc</td>
+<td>VZ</td>
+</tr>
+<tr>
+<td>Walmart Inc</td>
+<td>WMT</td>
+</tr>
+<tr>
+<td>Exxon Mobil Corp</td>
+<td>XOM</td>
+</tr>
+</tbody>
+</table>
+<pre class="python"><code># dowloading data using twelve data api
+tickers = [&quot;AAPL&quot;, &quot;AXP&quot;, &quot;BA&quot;, &quot;GE&quot;,&quot;JNJ&quot;, &quot;JPM&quot;, &quot;KO&quot;, &quot;MCD&quot;, &quot;MSFT&quot;, &quot;VZ&quot;,  &quot;WMT&quot;, &quot;XOM&quot;]
+api_key = &quot;*************************************&quot;
+interval = &quot;1day&quot;
+start = &quot;2008-01-01&quot;
+end = &quot;2018-01-01&quot;
+stocks = []
+def stock_data(tick):
+    url = f&#39;https://api.twelvedata.com/time_series?symbol={tick}&amp;start_date={start}&amp;
+                end_date={end}&amp;interval={interval}&amp;order=ASC&amp;apikey={api_key}&#39;
+    data = requests.get(url).json()
+    return data[&quot;values&quot;]</code></pre>
+<pre class="python"><code>df = pd.DataFrame()
+df[&quot;datetime&quot;] = pd.DataFrame(stock_data(&quot;AAPL&quot;))[&quot;datetime&quot;]
+for tick in tickers[:6]:
+    df[tick] = pd.DataFrame(stock_data(tick))[&quot;close&quot;]</code></pre>
+<pre class="python"><code>for tick in tickers[6:]:
+    df[tick] = pd.DataFrame(stock_data(tick))[&quot;close&quot;]</code></pre>
+<pre class="python"><code># datetime as index
+df[&quot;datetime&quot;] = pd.to_datetime(df[&quot;datetime&quot;])
+df.index = df[&quot;datetime&quot;]
+df.drop([&quot;datetime&quot;], axis=1, inplace=True)</code></pre>
+<pre class="python"><code>df.head()</code></pre>
+<table>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 9%" />
+<col style="width: 7%" />
+<col style="width: 7%" />
+<col style="width: 9%" />
+<col style="width: 7%" />
+<col style="width: 7%" />
+<col style="width: 8%" />
+<col style="width: 7%" />
+<col style="width: 8%" />
+<col style="width: 9%" />
+<col style="width: 7%" />
+<col style="width: 7%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">datetime</th>
+<th style="text-align: right;">AAPL</th>
+<th style="text-align: right;">AXP</th>
+<th style="text-align: right;">BA</th>
+<th style="text-align: right;">GE</th>
+<th style="text-align: right;">JNJ</th>
+<th style="text-align: right;">JPM</th>
+<th style="text-align: right;">KO</th>
+<th style="text-align: right;">MCD</th>
+<th style="text-align: right;">MSFT</th>
+<th style="text-align: right;">VZ</th>
+<th style="text-align: right;">WMT</th>
+<th style="text-align: right;">XOM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2008-01-02 00:00:00</td>
+<td style="text-align: right;">6.95857</td>
+<td style="text-align: right;">51.04</td>
+<td style="text-align: right;">86.62</td>
+<td style="text-align: right;">282.769</td>
+<td style="text-align: right;">65.91</td>
+<td style="text-align: right;">42.17</td>
+<td style="text-align: right;">30.545</td>
+<td style="text-align: right;">58.1</td>
+<td style="text-align: right;">35.22</td>
+<td style="text-align: right;">40.3385</td>
+<td style="text-align: right;">46.9</td>
+<td style="text-align: right;">93.51</td>
+</tr>
+<tr>
+<td style="text-align: left;">2008-01-03 00:00:00</td>
+<td style="text-align: right;">6.96179</td>
+<td style="text-align: right;">50.41</td>
+<td style="text-align: right;">86.98</td>
+<td style="text-align: right;">283.077</td>
+<td style="text-align: right;">65.93</td>
+<td style="text-align: right;">41.88</td>
+<td style="text-align: right;">30.865</td>
+<td style="text-align: right;">57.93</td>
+<td style="text-align: right;">35.37</td>
+<td style="text-align: right;">40.5253</td>
+<td style="text-align: right;">46.38</td>
+<td style="text-align: right;">93.83</td>
+</tr>
+<tr>
+<td style="text-align: left;">2008-01-04 00:00:00</td>
+<td style="text-align: right;">6.43036</td>
+<td style="text-align: right;">49.14</td>
+<td style="text-align: right;">85.82</td>
+<td style="text-align: right;">277.231</td>
+<td style="text-align: right;">65.84</td>
+<td style="text-align: right;">40.93</td>
+<td style="text-align: right;">30.925</td>
+<td style="text-align: right;">57.05</td>
+<td style="text-align: right;">34.38</td>
+<td style="text-align: right;">39.7691</td>
+<td style="text-align: right;">45.72</td>
+<td style="text-align: right;">92.08</td>
+</tr>
+<tr>
+<td style="text-align: left;">2008-01-07 00:00:00</td>
+<td style="text-align: right;">6.34429</td>
+<td style="text-align: right;">49.36</td>
+<td style="text-align: right;">82.87</td>
+<td style="text-align: right;">278.308</td>
+<td style="text-align: right;">66.86</td>
+<td style="text-align: right;">41.34</td>
+<td style="text-align: right;">31.655</td>
+<td style="text-align: right;">58.03</td>
+<td style="text-align: right;">34.61</td>
+<td style="text-align: right;">40.4692</td>
+<td style="text-align: right;">46.56</td>
+<td style="text-align: right;">91.22</td>
+</tr>
+<tr>
+<td style="text-align: left;">2008-01-08 00:00:00</td>
+<td style="text-align: right;">6.11607</td>
+<td style="text-align: right;">47.95</td>
+<td style="text-align: right;">79.91</td>
+<td style="text-align: right;">272.308</td>
+<td style="text-align: right;">66.94</td>
+<td style="text-align: right;">39.7</td>
+<td style="text-align: right;">31.785</td>
+<td style="text-align: right;">57.08</td>
+<td style="text-align: right;">33.45</td>
+<td style="text-align: right;">39.1996</td>
+<td style="text-align: right;">45.97</td>
+<td style="text-align: right;">90.05</td>
+</tr>
+</tbody>
+</table>
+<pre class="python"><code># any na values
+df.info()</code></pre>
+<pre><code>&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+DatetimeIndex: 2518 entries, 2008-01-02 to 2017-12-29
+Data columns (total 12 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   AAPL    2518 non-null   object
+ 1   AXP     2518 non-null   object
+ 2   BA      2518 non-null   object
+ 3   GE      2518 non-null   object
+ 4   JNJ     2518 non-null   object
+ 5   JPM     2518 non-null   object
+ 6   KO      2518 non-null   object
+ 7   MCD     2518 non-null   object
+ 8   MSFT    2518 non-null   object
+ 9   VZ      2518 non-null   object
+ 10  WMT     2518 non-null   object
+ 11  XOM     2518 non-null   object
+dtypes: object(12)
+memory usage: 255.7+ KB</code></pre>
+<pre class="python"><code>df.isna().sum()</code></pre>
+<pre><code>AAPL    0
+AXP     0
+BA      0
+GE      0
+JNJ     0
+JPM     0
+KO      0
+MCD     0
+MSFT    0
+VZ      0
+WMT     0
+XOM     0
+dtype: int64</code></pre>
+<pre class="python"><code>df = df.astype(&quot;float&quot;)</code></pre>
+<h2 id="daily-return"><strong>Daily Return</strong></h2>
+<p><em>We calculate the daily change in prices of stock using the given
+formulae</em></p>
+<p><span class="math display">$$r_{asset} = \frac{P_t -
+P_{t-1}}{P_{t-1}}\times100$$</span></p>
+<p><em>where</em></p>
+<p><span class="math inline"><em>P</em><sub><em>t</em></sub></span>
+<em>is present value of adjusted close price of individual
+stock</em></p>
+<p><span class="math inline"><em>P</em><sub><em>t</em> − 1</sub></span>
+<em>is previous day adjusted close price of individual stock</em></p>
+<p><span
+class="math inline"><em>r</em><sub><em>a</em><em>s</em><em>s</em><em>e</em><em>t</em></sub></span>
+<em>daily return on assest</em></p>
+<pre class="python"><code>df = df.pct_change().dropna()
+df = df*100</code></pre>
+<h3 id="independent-returns"><strong>Independent Returns</strong></h3>
+<p><em>According to <code>Random Walk Theory</code> stock price change
+are independent of past movement trends and therefore next day price
+cannot be <code>predicted</code> from previous price changes</em></p>
+<p><em>We plot a simple <code>scatterplot</code> for our twelve assets
+where we compare the previous day return against the present value and
+it shows absolutely <code>no correlation</code> for any of the assets
+which proves the assmption to be true</em></p>
+<pre class="python"><code>fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(8,10))
+tickers = df.columns
+x = 0
+for i in range(4):
+    for j in range(3):
+        ax = sns.scatterplot(x=df[tickers[x]], y=df[tickers[x]].shift(1),color=&quot;deepskyblue&quot;,alpha=0.5, ax=axes[i,j])
+        ax.set_title(tickers[x])
+        ax.set_xlabel(&quot;t&quot;)
+        ax.set_ylabel(&quot;t+1&quot;)
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_19_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h3 id="distribution-of-returns"><strong>Distribution of
+Returns</strong></h3>
+<p><em>The daily return on assets are collected and represented in the
+form of <code>histogram</code> given in the figure below, from initial
+analysis it seems that most of the stocks closely resemble
+<code>normal distribution</code>. Most of these returns are
+<code>concentrated</code> towards the <code>mean</code> value but a
+small portion of these return are scattered at the end of the
+distribution showing few days where there is <code>large swing</code> in
+price</em></p>
+<pre class="python"><code>fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(8,8))
+tickers = df.columns
+x = 0
+for i in range(4):
+    for j in range(3):
+        ax = sns.histplot(df[tickers[x]], bins=25, color=&quot;navy&quot;, alpha=0.7, ax=axes[i,j])
+        ax.set_title(tickers[x])
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_22_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h3 id="normal-assumption"><strong>Normal Assumption</strong></h3>
+<pre class="python"><code>from scipy import stats
+tickers = df.columns
+xnor = np.arange(-10,10, 0.1)
+ynor = stats.norm.pdf(xnor)
+x = 0
+fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(10,8))
+for i in range(4):
+    for j in range(3):
+        ax = sns.kdeplot(df[tickers[x]],color=&quot;violet&quot;, fill=True, ax=axes[i,j])
+        sns.lineplot(x=xnor, y=ynor, lw=1.5, color=&quot;navy&quot;, ax=axes[i,j], label=&quot;Normal&quot;)
+        ax.set_xlim(-4,4)
+        ax.set_title(tickers[x])
+        ax.set_xlabel(&quot;&quot;)
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_24_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h3 id="mean-return"><strong>Mean Return</strong></h3>
+<pre class="python"><code>pd.DataFrame(df.mean(), columns=[&quot;MeanReturn&quot;]).T</code></pre>
+<table>
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 8%" />
+<col style="width: 9%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: right;">AAPL</th>
+<th style="text-align: right;">AXP</th>
+<th style="text-align: right;">BA</th>
+<th style="text-align: right;">GE</th>
+<th style="text-align: right;">JNJ</th>
+<th style="text-align: right;">JPM</th>
+<th style="text-align: right;">KO</th>
+<th style="text-align: right;">MCD</th>
+<th style="text-align: right;">MSFT</th>
+<th style="text-align: right;">VZ</th>
+<th style="text-align: right;">WMT</th>
+<th style="text-align: right;">XOM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">MeanReturn</td>
+<td style="text-align: right;">0.0910855</td>
+<td style="text-align: right;">0.0565557</td>
+<td style="text-align: right;">0.0651659</td>
+<td style="text-align: right;">-0.00971978</td>
+<td style="text-align: right;">0.0352106</td>
+<td style="text-align: right;">0.0744775</td>
+<td style="text-align: right;">0.0229866</td>
+<td style="text-align: right;">0.0500293</td>
+<td style="text-align: right;">0.0505538</td>
+<td style="text-align: right;">0.0202781</td>
+<td style="text-align: right;">0.0371706</td>
+<td style="text-align: right;">0.00742542</td>
+</tr>
+</tbody>
+</table>
+<pre class="python"><code>plt.figure(figsize=(7,3))
+ax1 = sns.barplot(x=df.columns, y=df.mean(), color=&quot;violet&quot;)
+ax1.set_title(&quot;Mean Returns b/w 2008-17&quot;);</code></pre>
+<figure>
+<img src="static/images/output_27_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h2 id="risk"><strong>Risk</strong></h2>
+<p><em>In the context of finance the risk can be defined as the
+<code>uncertainty</code> in the market. Mathematically it can defined as
+the <code>deviation</code> away from the expected
+<code>historical returns</code> during a particular time period. A more
+preferred definition in our context of our analysis is the
+<code>degree of making loss</code> on a potential investment.There are
+several statistical methods use to measure financial risk</em></p>
+<h3 id="standard-deviation"><strong>Standard Deviation</strong></h3>
+<p><em>Standard Deviation is the most commonly employed method for
+calculating financial risk. It can be expressed as.</em></p>
+<p><span class="math display">$$sd_{asset} = \sqrt{\frac{\sum_(x_i -
+\mu)^2}{N}}$$</span></p>
+<p><span class="math inline"><em>N</em></span> is the total number of
+daily returns observed,</p>
+<p><span class="math inline"><em>x</em><sub><em>i</em></sub></span> is
+daily observed return,</p>
+<p><span class="math inline"><em>μ</em></span> is mean return observed
+during N days.</p>
+<p><em>The <code>greater</code> the Standard Deviation of the security
+the <code>more risky</code> the asset is (in relative terms). The
+Standard Deviation calculates the <code>historical volatility</code> of
+the security, greater the <code>dispersion</code> from the
+<code>mean</code> value indicates more <code>volatile</code> asset. From
+the table we can observe that JNJ is least risky asset with standard
+deviation of 1.0321% while JPM is the most risky asset with standard
+deviation of 2.733%.</em></p>
+<pre class="python"><code>pd.DataFrame(df.std(), columns=[&quot;SD&quot;]).T</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 3%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: right;">AAPL</th>
+<th style="text-align: right;">AXP</th>
+<th style="text-align: right;">BA</th>
+<th style="text-align: right;">GE</th>
+<th style="text-align: right;">JNJ</th>
+<th style="text-align: right;">JPM</th>
+<th style="text-align: right;">KO</th>
+<th style="text-align: right;">MCD</th>
+<th style="text-align: right;">MSFT</th>
+<th style="text-align: right;">VZ</th>
+<th style="text-align: right;">WMT</th>
+<th style="text-align: right;">XOM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">SD</td>
+<td style="text-align: right;">1.96343</td>
+<td style="text-align: right;">2.46044</td>
+<td style="text-align: right;">1.81769</td>
+<td style="text-align: right;">1.99671</td>
+<td style="text-align: right;">1.03731</td>
+<td style="text-align: right;">2.75639</td>
+<td style="text-align: right;">1.17105</td>
+<td style="text-align: right;">1.17366</td>
+<td style="text-align: right;">1.75271</td>
+<td style="text-align: right;">1.38044</td>
+<td style="text-align: right;">1.23344</td>
+<td style="text-align: right;">1.54305</td>
+</tr>
+</tbody>
+</table>
+<pre class="python"><code>plt.figure(figsize=(7,3))
+ax1 = sns.barplot(x=df.columns, y=df.std(), color=&quot;navy&quot;, alpha=0.7)
+ax1.set_title(&quot;Mean Returns b/w 2008-17&quot;);</code></pre>
+<figure>
+<img src="static/images/output_34_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h3 id="volatility-clustering"><strong>Volatility
+Clustering</strong></h3>
+<p><em>A more <code>preferable</code> method is using the
+<code>daily volatility</code> clustering technique which helps in
+<code>visualizing</code> the volatility at <code>specific</code> periods
+in time.From Figure we can observe that the period between the year
+<code>2008 to 2010</code> was extremely volatile period due to rapid
+change in the stock prices from their mean value, the contributing
+factor for this rapid movement was in response to the
+<code>subprime mortgage crises</code> in US due to which their was a
+large scale financial panic in the market. After the
+<code>US government</code> intervened in the financial markets to calm
+<code>down</code> the rapid volatility in the market, the price movement
+started to become less intense.</em></p>
+<pre class="python"><code>fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(10,8))
+tickers = df.columns
+x = 0
+for i in range(4):
+    for j in range(3):
+        ax = sns.lineplot(x=df.index, y=df[tickers[x]],color=&quot;royalblue&quot;,alpha=1, ax=axes[i,j])
+        ax.tick_params(labelrotation=45)
+        ax.set_title(tickers[x])
+        ax.set_xlabel(&quot;&quot;)
+        ax.set_ylabel(&quot;SD&quot;)
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_37_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h3 id="correlation-among-assets"><strong>Correlation among
+assets</strong></h3>
+<p><em>Markowitz (1952) argued that the <code>individual</code> risk
+pertaining to an asset is <code>not</code> as much important as the
+<code>contribution</code> of risk from <code>each</code> asset to the
+aggregate portfolio.In the financial markets only those
+<code>risk</code> are <code>compensated</code> that <code>cannot</code>
+be avoided.</em></p>
+<p><em>In the financial market no two financial assets are either
+completely correlated or completely independent of each other, to some
+degree each asset is <code>interrelated</code> to the
+<code>movement</code> of the prices of another asset , some assets have
+very high degree of co-movement while some have less exposure to each
+other. The Modern Portfolio Theory attempts to analyze the
+<code>interrelationship</code> between different investments. It
+utilizes statistical measures such as <code>correlation</code> to
+quantify the diversification effect on portfolio</em></p>
+<p><em>The extent to which the risk of the portfolio can be reduced
+largely depends on the <code>covariance</code> between different assets.
+Portfolio assets which have <code>low</code> correlation coefficients
+are considered to be <code>less</code> risky than pairs with high
+coefficients</em></p>
+<p><em>Within the portfolio of<code>N</code> assets there are N
+variances and <code>N(N-1)</code> covariance. As the number of assets in
+the portfolio increases the number of covariance <code>increases</code>
+rapidly. This large number of covariance are very
+<code>important</code>towards determining the risk of the
+portfolio.</em></p>
+<p><em>In the Figure we can observe that at the start of the year
+<code>2008</code> the correlation among the assets were
+<code>low</code>as the <code>crises</code> took of , the correlation
+start to become <code>stronger</code> between the various
+<code>pairs</code> of asset. In the year between <code>2009</code> and
+<code>2013</code> we can see a high correlation among the assets which
+can be attributed to the <code>increase</code> in
+<code>systematic risk</code> due to <code>panic</code> in the US
+financial industry. After 2013 the correlation among the pairs of asset
+start to <code>decline</code> due to decrease in systematic risk. During
+the time of financial stress the correlation among the pairs of the
+portfolio becomes very <code>high</code> due to intense
+<code>volatility</code> in the market.</em></p>
+<pre class="python"><code>fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(8,8))
+periods =[&quot;2008-12-31&quot;, &quot;2009-12-31&quot;,&quot;2010-12-31&quot;,&quot;2011-12-31&quot;,&quot;2012-12-31&quot;,&quot;2013-12-31&quot;,&quot;2014-12-31&quot;,&quot;2015-12-31&quot;,&quot;2016-12-31&quot;]
+x = 0
+for i in range(3):
+    for j in range(3):
+        ax = sns.heatmap((df[:periods[x]].corr()), lw=0.5, cmap=&quot;YlGnBu&quot;, cbar=False, ax=axes[i,j])
+        ax.set_title(periods[x][:4])
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_41_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h2 id="sharpe-ratio"><strong>Sharpe Ratio</strong></h2>
+<p><em>Sharpe ratio give insight to the investor what he is getting as a
+return on a security for the unit amount of risk he is taking. Sharpe
+ratio is calculated using</em></p>
+<p><span class="math display">$${Sharpe Ratio} =
+\frac{R_{asset}-R_f}{\sigma_{assest}}$$</span></p>
+<p><span
+class="math inline"><em>R</em><sub><em>a</em><em>s</em><em>s</em><em>e</em><em>t</em></sub></span>
+return on asset</p>
+<p><span class="math inline"><em>R</em><sub><em>f</em></sub></span> risk
+free rate</p>
+<p><span
+class="math inline"><em>σ</em><sub><em>a</em><em>s</em><em>s</em><em>e</em><em>t</em></sub></span>
+SD of asset</p>
+<p><em>Modern Portfolio theory sttes that adding assets to a portfolio
+that have <code>low</code> correlation can <code>decrease</code>
+portfolio <code>risk</code> without sacrificing the return. The
+<code>larger</code> the <code>sharpe ratio</code> the
+<code>better</code> it is for portfolio</em></p>
+<pre class="python"><code>pd.DataFrame(df.mean()/df.std(), columns=[&quot;Sharpe Ratio&quot;]).T</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 3%" />
+<col style="width: 4%" />
+<col style="width: 7%" />
+<col style="width: 10%" />
+<col style="width: 8%" />
+<col style="width: 7%" />
+<col style="width: 7%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 8%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: right;">AAPL</th>
+<th style="text-align: right;">AXP</th>
+<th style="text-align: right;">BA</th>
+<th style="text-align: right;">GE</th>
+<th style="text-align: right;">JNJ</th>
+<th style="text-align: right;">JPM</th>
+<th style="text-align: right;">KO</th>
+<th style="text-align: right;">MCD</th>
+<th style="text-align: right;">MSFT</th>
+<th style="text-align: right;">VZ</th>
+<th style="text-align: right;">WMT</th>
+<th style="text-align: right;">XOM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Sharpe Ratio</td>
+<td style="text-align: right;">0.0463911</td>
+<td style="text-align: right;">0.022986</td>
+<td style="text-align: right;">0.035851</td>
+<td style="text-align: right;">-0.00486789</td>
+<td style="text-align: right;">0.0339443</td>
+<td style="text-align: right;">0.02702</td>
+<td style="text-align: right;">0.019629</td>
+<td style="text-align: right;">0.0426267</td>
+<td style="text-align: right;">0.0288432</td>
+<td style="text-align: right;">0.0146896</td>
+<td style="text-align: right;">0.0301357</td>
+<td style="text-align: right;">0.00481216</td>
+</tr>
+</tbody>
+</table>
+<pre class="python"><code>plt.figure(figsize=(7,3))
+ax1 = sns.barplot(x=df.columns, y=df.mean()/df.std(), color=&quot;violet&quot;, alpha=0.7)
+ax1.set_title(&quot;Mean Returns b/w 2008-17&quot;);</code></pre>
+<figure>
+<img src="static/images/output_45_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h2 id="diversification-effect"><strong>Diversification
+Effect</strong></h2>
+<p><em>The effect of diversification is of central importance to Modern
+Portfolio Theory. The process of diversification suggests the investor
+to <code>invest</code> in <code>multiple assets</code> across different
+asset classes and industries. As the number of securities in the
+portfolio <code>increases</code> the portfolio become <code>less</code>
+risk inherent.</em></p>
+<p><em>But the <code>decreases</code> is <code>non linear</code> in
+nature. As in the Figure we can observe that as the number of assets
+increase (equal weighted portfolio) the standard deviation decreases at
+a <code>diminishing rate</code>, after adding a certain number of assets
+if we add more assets to the portfolio it does <code>not</code> have
+much impact in <code>decreasing</code> the portfolio risk because some
+risk will always remain in the form of systematic risk which cannot be
+reduced.</em></p>
+<pre class="python"><code>dec_sd = df.std().sort_values(ascending=False).index
+wport_sd =[]
+for i in range(1,13):
+    equal_weight = np.repeat(1/i, i).reshape(-1,1)
+    covar = df.loc[:,dec_sd[:i]].cov().to_numpy()
+    sd = np.sqrt(np.dot(equal_weight.T,np.dot(covar, equal_weight)))
+    wport_sd.append(sd)
+wport_sd = np.array(wport_sd).reshape(12,)</code></pre>
+<pre class="python"><code>plt.figure(figsize=(8,4))
+sns.scatterplot(x=range(1,13), y=wport_sd, color=&quot;red&quot;, s=50, legend=False)
+sns.lineplot(x=range(1,13), y=wport_sd, color=&quot;black&quot;, legend=False);</code></pre>
+<figure>
+<img src="static/images/output_49_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<p><em>From Volatility clustering we can conclude that portfolio returns
+are much less volatile than any single stock return</em></p>
+<pre class="python"><code>dates = df.index
+freq_assets = df.shape[1]
+daily_returns = []
+weight = np.repeat(1/freq_assets, freq_assets).reshape(-1,1)
+for date in dates:
+    asset_return = df.loc[date].to_numpy()
+    port_return = np.dot(weight.T, asset_return)
+    daily_returns.append(port_return)</code></pre>
+<pre class="python"><code>portfolio_return = np.array(daily_returns).reshape(df.shape[0],)</code></pre>
+<pre class="python"><code>fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(10, 10),dpi=120)
+tickers = df.columns
+x = 0
+for i in range(4):
+    for j in range(3):
+        ax = sns.lineplot(x=df.index, y=df[tickers[x]],color=&quot;deepskyblue&quot;,alpha=1, ax=axes[i,j])
+        sns.lineplot(x=df.index, y=portfolio_return, color=&quot;black&quot;,linewidth=0.5, alpha=0.8, ax=axes[i,j], label=&quot;Portfolio&quot;)
+        ax.tick_params(labelrotation=45)
+        ax.set_title(tickers[x])
+        ax.set_xlabel(&quot;&quot;)
+        ax.set_ylabel(&quot;SD&quot;)
+        x = x + 1
+plt.tight_layout()</code></pre>
+<figure>
+<img src="static/images/output_53_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<h2 id="efficient-portfolios"><strong>Efficient Portfolios</strong></h2>
+<p><em>Markowitz concluded that out of <code>infinite</code> portfolio
+that can be constructed by assigning different <code>weights</code> to
+the portfolio (of the 12 stocks) there will be one
+<code>efficient portfolio</code> which gives an investor
+<code>maximum  return</code> for a given <code>amount of risk</code>.
+The investor would always <code>prefer</code> the portfolio over the
+other inefficient portfolios because it <code>maximizes</code> his
+<code>utility</code></em></p>
+<p><em>Using computer <code>simulation</code> we have generated more
+than 50,000 randomly weighted portfolios out of the 12 stocks and
+plotted their expected return and standard deviation.</em></p>
+<p><em>From the Figure we can observe that these random portfolios
+constitutes a <code>parabolic curve</code>. At the <code>edge</code> of
+these curve lie the <code>efficient</code> portfolios which investor
+<code>prefer</code> over other portfolios based on their
+utility.</em></p>
+<pre class="python"><code>row = 50000
+col = 12
+random = np.random.normal(size=row*col).reshape(row,col)
+sum_ = random.sum(axis=1)
+weights = []
+for idx in range(row):
+    weight = random[idx]/sum_[idx]
+    weights.append(weight)
+weights = np.array(weights)</code></pre>
+<pre class="python"><code>mean = []
+sd = []
+covar = np.array(df.cov())
+daily_mean = np.array(df.mean())
+for idx in range(weights.shape[0]):
+    w = weights[idx].reshape(-1,1)
+    port_mean = np.dot(w.T,daily_mean)
+    port_sd = np.sqrt(np.dot(w.T, np.dot(covar,w)))
+    mean.append(port_mean)
+    sd.append(port_sd)
+mean = np.array(mean).reshape(row,)
+sd = np.array(sd).reshape(row,)
+sharpe = mean/sd</code></pre>
+<pre class="python"><code>plt.figure(figsize=(5,7),dpi=120)
+ax = sns.scatterplot(x=sd, y=mean, color=&quot;red&quot;, size= 2,alpha=0.5, hue=sharpe, palette=&quot;PuRd&quot;, legend=False)
+ax.set_xlim(0.85,3)
+ax.set_ylim(-0.1,0.16);</code></pre>
+<figure>
+<img src="static/images/output_58_0.png" alt="png" />
+<figcaption aria-hidden="true">png</figcaption>
+</figure>
+<pre class="python"><code></code></pre>
+
